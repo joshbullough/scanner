@@ -35,30 +35,62 @@
                 halfSample: false,
             },
             decoder: {
-                readers: ["upc_reader"],
+                readers: ["upc_reader", "code_39_reader"],
                 debug: {
                     drawBoundingBox: true,
-                    showFrequency: false,
-                    drawScanline: false,
-                    showPattern: false
+                    showFrequency: true,
+                    drawScanline: true,
+                    showPattern: true
                 }
             },
         }, function (err) {
             if (err) {
-                console.log(err);
-                return
+                console.log("Quagga initialization failed:", err);
+                return;
             }
             console.log("Initialization finished. Ready to start");
             Quagga.start(); //opens the scanner.
         });
 
-        Quagga.onDetected(function (data) {
-            var code = data.codeResult.code;
-            console.log('Barcode detected and processed : [' + data.codeResult.code + ']', data);
-            document.getElementById('upc').innerText += data.codeResult.code + '\n\n';
-            // window.location.href = "http://www.alscap.com/check-sale-price?ean=" + code;
+        Quagga.onProcessed(function (result) {
+            var drawingCtx = Quagga.canvas.ctx.overlay,
+                drawingCanvas = Quagga.canvas.dom.overlay;
+
+            if (result) {
+                if (result.boxes) {
+                    drawingCtx.clearRect(0, 0, parseInt(drawingCanvas.getAttribute("width")), parseInt(drawingCanvas.getAttribute("height")));
+                    result.boxes.filter(function (box) {
+                        return box !== result.box;
+                    }).forEach(function (box) {
+                        Quagga.ImageDebug.drawPath(box, { x: 0, y: 1 }, drawingCtx, { color: "green", lineWidth: 2 });
+                    });
+                }
+
+                if (result.box) {
+                    Quagga.ImageDebug.drawPath(result.box, { x: 0, y: 1 }, drawingCtx, { color: "#00F", lineWidth: 2 });
+                }
+
+                if (result.codeResult && result.codeResult.code) {
+                    Quagga.ImageDebug.drawPath(result.line, { x: 'x', y: 'y' }, drawingCtx, { color: 'red', lineWidth: 3 });
+                }
+            }
         });
 
+        Quagga.onDetected(function (data) {
+            // Check all decoded codes have a confidence of at least 90%
+            var allCodesMeetConfidenceThreshold = data.codeResult.decodedCodes.every(function (code) {
+                return code.error <= 0.1; // 0.1 error rate corresponds to 90% confidence
+            });
+
+            // Only log and display results if all codes meet confidence threshold
+            if (allCodesMeetConfidenceThreshold) {
+                var code = data.codeResult.code;
+                console.log('Barcode detected and processed : [' + data.codeResult.code + ']', data);
+                document.getElementById('upc').innerText += data.codeResult.code + '\n\n';
+            } else {
+                console.log('Detected barcode did not meet the confidence threshold.');
+            }
+        });
     }, 100);
 </script>
 
