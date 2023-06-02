@@ -13,6 +13,9 @@
 
 <body>
     <div id="scanner"></div>
+    <div>
+        <p id="upc">UPC</p>
+    </div>
 </body>
 
 <script>
@@ -25,19 +28,7 @@
                     width: 600,
                     height: 400,
                 },
-                // area: { // defines rectangle of the detection/localization area
-                //     top: "0%",    // top offset
-                //     right: "0%",  // right offset
-                //     left: "0%",   // left offset
-                //     bottom: "0%"  // bottom offset
-                // },
-                // singleChannel: false, // true: only the red color-channel is read
-                size: 800,
                 target: document.querySelector('#scanner')
-            },
-            locator: {
-                patchSize: "small", // x-small, small, medium, large, x-large
-                halfSample: false,
             },
             decoder: {
                 readers: ["upc_reader"],
@@ -60,8 +51,8 @@
         Quagga.onDetected(function (data) {
             var code = data.codeResult.code;
             console.log('Barcode detected and processed : [' + data.codeResult.code + ']', data);
-            // document.getElementById('upc').innerText = data.codeResult.code;
-            window.location.href = "http://www.alscap.com/check-sale-price?ean=" + code;
+            document.getElementById('upc').innerText += data.codeResult.code;
+            // window.location.href = "http://www.alscap.com/check-sale-price?ean=" + code;
         });
 
     }, 100);
@@ -70,11 +61,17 @@
 <style>
     body {
         display: flex;
+        flex-direction: column;
         justify-content: center;
         /* align-items: center; */
         height: 100vh;
         margin: 10;
         padding: 0;
+    }
+
+    #upc {
+        margin-top: 400px;
+        text-align: center;
     }
 
     #scanner {
