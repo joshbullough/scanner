@@ -51,7 +51,7 @@
         Quagga.onDetected(function (data) {
             var code = data.codeResult.code;
             console.log('Barcode detected and processed : [' + data.codeResult.code + ']', data);
-            document.getElementById('upc').innerText += data.codeResult.code;
+            document.getElementById('upc').innerText += data.codeResult.code + '\n\n';
             // window.location.href = "http://www.alscap.com/check-sale-price?ean=" + code;
         });
 
