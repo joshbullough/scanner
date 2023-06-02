@@ -61,7 +61,7 @@
             var code = data.codeResult.code;
             console.log('Barcode detected and processed : [' + data.codeResult.code + ']', data);
             // document.getElementById('upc').innerText = data.codeResult.code;
-            // window.location.href = "http://www.alscap.com/check-sale-price?ean=" + code;
+            window.location.href = "http://www.alscap.com/check-sale-price?ean=" + code;
         });
 
     }, 100);
