@@ -12,10 +12,13 @@
 </head>
 
 <body>
-    <div id="scanner"></div>
-    <div>
-        <p id="upc">UPC</p>
+    <div id="scanner" class="viewport">
+        <!-- <video autoplay="true" preload="auto"></video> -->
     </div>
+    <!-- <div id="scanner"></div> -->
+    <!-- <div>-->
+    <p id="upc">UPC</p>
+    <!-- </div>  -->
 </body>
 
 <script>
@@ -30,18 +33,26 @@
                 },
                 target: document.querySelector('#scanner')
             },
-            // locator: {
-            //     patchSize: "medium", // x-small, small, medium, large, x-large
-            //     halfSample: false,
-            // },
+            area: { // defines rectangle of the detection/localization area
+                top: "0%",    // top offset
+                right: "0%",  // right offset
+                left: "0%",   // left offset
+                bottom: "0%"  // bottom offset
+            },
+            locator: {
+                patchSize: "medium", // x-small, small, medium, large, x-large
+                halfSample: false,
+            },
             decoder: {
                 readers: ["upc_reader", "code_39_reader"],
                 debug: {
+                    showCanvas: true,
                     drawBoundingBox: true,
                     showFrequency: true,
                     drawScanline: true,
                     showPattern: true
-                }
+                },
+                multiple: false
             },
         }, function (err) {
             if (err) {
@@ -53,6 +64,7 @@
         });
 
         Quagga.onProcessed(function (result) {
+
             var drawingCtx = Quagga.canvas.ctx.overlay,
                 drawingCanvas = Quagga.canvas.dom.overlay;
 
@@ -74,26 +86,38 @@
                     Quagga.ImageDebug.drawPath(result.line, { x: 'x', y: 'y' }, drawingCtx, { color: 'red', lineWidth: 3 });
                 }
             }
+
         });
 
         Quagga.onDetected(function (data) {
             // Check all decoded codes have a confidence of at least 90%
-            var allCodesMeetConfidenceThreshold = data.codeResult.decodedCodes.every(function (code) {
-                return code.error <= 0.1; // 0.1 error rate corresponds to 90% confidence
-            });
+            var sumOfErrors = data.codeResult.decodedCodes.filter(x=>x).reduce(function (sum, code) {
+                console.log('sum:', sum);
+                console.log('code.error:', code.error);
+                return sum + parseFloat(code.error);
+            }, 0);
+
+            var averageError = sumOfErrors / data.codeResult.decodedCodes.length;
+
+            console.log('UPC', data, 'Average error:', averageError);
+
 
             // Only log and display results if all codes meet confidence threshold
-            if (allCodesMeetConfidenceThreshold) {
-                var code = data.codeResult.code;
-                console.log('Barcode detected and processed : [' + data.codeResult.code + ']', data);
-                document.getElementById('upc').innerText += data.codeResult.code + '\n\n';
-            } else {
-                console.log('Detected barcode did not meet the confidence threshold.');
-            }
+            // if (allCodesMeetConfidenceThreshold) {
+            //     var code = data.codeResult.code;
+            //     console.log('Barcode detected and processed : [' + data.codeResult.code + ']', data);
+            //     document.getElementById('upc').innerText = data.codeResult.code;
+            //     Quagga.stop();
+            // } else {
+            //     console.log('Detected barcode did not meet the confidence threshold.');
+            //     var code = data.codeResult.code;
+            //     console.log('Barcode detected and processed : [' + data.codeResult.code + ']', data);
+            // }
+            
         });
 
     }, 100);
-    
+
 </script>
 
 <style>
@@ -112,6 +136,7 @@
         margin-top: 100px;
         text-align: center;
     }
+
 
     #scanner {
         width: 600px;
@@ -132,6 +157,18 @@
         height: 60%;
         border: 5px double rgb(16, 167, 2);
         box-sizing: border-box;
+    }
+
+    #scanner video {
+        position: relative;
+        z-index: 1;
+        /* Lower z-index than canvas */
+    }
+
+    #scanner canvas {
+        position: relative;
+        z-index: 2;
+        /* Higher z-index than video */
     }
 
     @media only screen and (max-width: 1200px) {
